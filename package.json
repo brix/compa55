@@ -1,0 +1,39 @@
+{
+  "name": "compa55",
+  "version": "0.0.0",
+  "description": "Routable data interface library",
+  "license": "MIT",
+  "author": {
+    "name": "Evan Vosberg",
+    "email": "evanvosberg@inext.me"
+  },
+  "homepage": "https://github.com/brix/compa55",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/brix/compa55.git"
+  },
+  "bugs": {
+    "url": "https://github.com/brix/compa55/issues"
+  },
+  "keywords": [
+    "express",
+    "route",
+    "http",
+    "middleware"
+  ],
+  "main": "index.js",
+  "dependencies": {
+    "cla55": "git+https://github.com/brix/cla55.git#0.1.1"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-brix-release": "git+https://github.com/brix/grunt-brix-release.git",
+    "grunt-contrib-clean": "^0.6.0",
+    "grunt-contrib-copy": "^0.6.0",
+    "grunt-contrib-jshint": "^0.10.0",
+    "grunt-jscs": "^0.7.1",
+    "grunt-jsonlint": "^1.0.4",
+    "grunt-update-json": "^0.2.0",
+    "load-grunt-config": "^0.13.2"
+  }
+}
