@@ -1,8 +1,9 @@
-/*jslint node: true, plusplus: true*/
+/*jshint node: true*/
+/*jscs:disable disallowDanglingUnderscores*/
+
+'use strict';
 
 module.exports = (function () {
-
-    'use strict';
 
     var Route = require('./route'),
         Router;
@@ -69,7 +70,7 @@ module.exports = (function () {
                 if (fn.middleware) {
                     fn.middleware(req, res, nextCallback);
                 } else {
-                    fn(req, res, nextCallback)
+                    fn(req, res, nextCallback);
                 }
             }
 
@@ -115,16 +116,13 @@ module.exports = (function () {
     };
 
     Router.prototype.route = function route(method, path, callbacks) {
-        var options = {
-                caseSensitive: this.caseSensitive,
-                stict: this.strict
-            },
-            route = new Route(method, this.base + path, callbacks, options);
+        this.map[method] = this.map[method] || [];
 
         // Add route
-        /*jslint ass: true*/
-        (this.map[method] = this.map[method] || []).push(route);
-        /*jslint ass: false*/
+        this.map[method].push(new Route(method, this.base + path, callbacks, {
+            caseSensitive: this.caseSensitive,
+            stict: this.strict
+        }));
 
         return this;
     };

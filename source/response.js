@@ -1,8 +1,8 @@
-/*jslint node: true, nomen: true*/
+/*jshint node: true*/
+
+'use strict';
 
 module.exports = (function () {
-
-    'use strict';
 
     /**
      * Initialize a new "request" `Request`

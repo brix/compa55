@@ -1,8 +1,9 @@
-/*jslint node: true, plusplus: true, nomen: true*/
+/*jshint node: true*/
+/*jscs:disable disallowDanglingUnderscores*/
+
+'use strict';
 
 module.exports = (function () {
-
-    'use strict';
 
     var Routify;
 
@@ -96,7 +97,7 @@ module.exports = (function () {
                     setTimeout(function () {
                         // Dispatch the request on the server
                         that._server.middleware(req, res, function next(err, res) {
-                            close(new Error('Unhandled request.'))
+                            close(new Error('Unhandled request.'));
                         });
                     });
                 }

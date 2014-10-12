@@ -8,14 +8,14 @@ module.exports = (function () {
         var query = {};
 
         querystring
-            .replace(/^(\?)/, "")
-            .split("&")
+            .replace(/^(\?)/, '')
+            .split('&')
             .forEach(function (pair) {
-                pair = pair.split("=");
+                pair = pair.split('=');
 
                 var registers = [],
                     name = decodeURIComponent(pair[0]),
-                    value = decodeURIComponent(pair[1] || ""),
+                    value = decodeURIComponent(pair[1] || ''),
                     tmp = query,
                     register,
                     next,
@@ -25,7 +25,7 @@ module.exports = (function () {
                 name = name.replace(/\[([^\]]*)\]/g, function (all, $1) {
                     /*jslint unparam: true*/
                     registers.push($1);
-                    return "";
+                    return '';
                 });
 
                 registers.unshift(name);
@@ -36,7 +36,7 @@ module.exports = (function () {
                     next = registers[j + 1];
 
                     if (!tmp[register]) {
-                        tmp[register] = next === "" || (/^[0-9]+$/).test(next) ? [] : {};
+                        tmp[register] = next === '' || (/^[0-9]+$/).test(next) ? [] : {};
                     }
 
                     tmp = tmp[register];
@@ -44,7 +44,7 @@ module.exports = (function () {
 
                 register = registers[l];
 
-                if (register === "") {
+                if (register === '') {
                     tmp.push(value);
                 } else {
                     tmp[register] = value;
@@ -87,13 +87,13 @@ module.exports = (function () {
         //this.title = document.title;
         //this.state = state || {};
         //this.state.path = path;
-        this.querystring = ~i ? path.slice(i + 1) : '';
-        this.pathname = ~i ? path.slice(0, i) : path;
+        this.querystring = i !== -1 ? path.slice(i + 1) : '';
+        this.pathname = i !== -1 ? path.slice(0, i) : path;
         this.params = [];
 
         // fragment
         this.hash = '';
-        if (~this.path.indexOf('#')) {
+        if (this.path.indexOf('#') !== -1) {
             parts = this.path.split('#');
             this.path = parts[0];
             this.hash = parts[1] || '';

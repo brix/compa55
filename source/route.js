@@ -1,8 +1,9 @@
-/*jslint node: true, plusplus: true*/
+/*jshint node: true*/
+/*jscs:disable disallowDanglingUnderscores*/
+
+'use strict';
 
 module.exports = (function () {
-
-    'use strict';
 
     var Route;
 
@@ -39,7 +40,7 @@ module.exports = (function () {
             .replace(/(\/)?(\.)?:(\w+)(?:(\(.*?\)))?(\?)?/g, function (_, slash, format, key, capture, optional) {
                 keys.push({
                     name: key,
-                    optional: !!optional
+                    optional: optional ? true : false
                 });
 
                 slash = slash || '';
@@ -100,7 +101,7 @@ module.exports = (function () {
         var keys = this.keys,
             params = this.params = [],
             qsIndex = path.indexOf('?'),
-            pathname = ~qsIndex ? path.slice(0, qsIndex) : path,
+            pathname = qsIndex !== -1 ? path.slice(0, qsIndex) : path,
             m = this.regexp.exec(decodeURIComponent(pathname)),
             i,
             len,
@@ -116,9 +117,7 @@ module.exports = (function () {
             val = typeof m[i] === 'string' ? decodeURIComponent(m[i]) : m[i];
 
             if (key) {
-                params[key.name] = undefined !== params[key.name]
-                    ? params[key.name]
-                    : val;
+                params[key.name] = undefined !== params[key.name] ? params[key.name] : val;
             } else {
                 params.push(val);
             }
