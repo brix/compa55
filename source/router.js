@@ -1,9 +1,22 @@
-/*jshint node: true*/
 /*jscs:disable disallowDanglingUnderscores*/
+/*global require, exports, module, define*/
+(function (root, factory) {
 
-'use strict';
+    'use strict';
 
-module.exports = (function () {
+    if (typeof define === 'function' && define.amd) {
+        // AMD: Register as an anonymous module
+        return define([], factory);
+    }
+
+    if (typeof exports === 'object') {
+        // CommonJS
+        return factory(require, exports, module);
+    }
+
+}(this, function (require, exports, module) {
+
+    'use strict';
 
     var Route = require('./route'),
         Router;
@@ -156,6 +169,6 @@ module.exports = (function () {
         return this;
     };
 
-    return Router;
+    module.exports = Router;
 
-}());
+}));

@@ -1,6 +1,19 @@
-/*jslint node: true, plusplus: true, nomen: true, bitwise: true, regexp: true*/
+/*global require, exports, module, define*/
+(function (root, factory) {
 
-module.exports = (function () {
+    'use strict';
+
+    if (typeof define === 'function' && define.amd) {
+        // AMD: Register as an anonymous module
+        return define([], factory);
+    }
+
+    if (typeof exports === 'object') {
+        // CommonJS
+        return factory(require, exports, module);
+    }
+
+}(this, function (require, exports, module) {
 
     'use strict';
 
@@ -110,6 +123,6 @@ module.exports = (function () {
         return this;
     };
 
-    return Request;
+    module.exports = Request;
 
-}());
+}));
