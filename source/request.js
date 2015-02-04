@@ -5,7 +5,7 @@
 
     if (typeof define === 'function' && define.amd) {
         // AMD: Register as an anonymous module
-        return define([], factory);
+        return define(['require', 'exports', 'module', 'cla55'], factory);
     }
 
     if (typeof exports === 'object') {
@@ -17,112 +17,112 @@
 
     'use strict';
 
-    function parse(querystring) {
-        var query = {};
+    var Cla55 = require('cla55'),
 
-        querystring
-            .replace(/^(\?)/, '')
-            .split('&')
-            .forEach(function (pair) {
-                pair = pair.split('=');
+        parse = function parse(querystring) {
+            var query = {};
 
-                var registers = [],
-                    name = decodeURIComponent(pair[0]),
-                    value = decodeURIComponent(pair[1] || ''),
-                    tmp = query,
-                    register,
-                    next,
-                    j,
-                    l;
+            querystring
+                .replace(/^(\?)/, '')
+                .split('&')
+                .forEach(function (pair) {
+                    pair = pair.split('=');
 
-                name = name.replace(/\[([^\]]*)\]/g, function (all, $1) {
-                    /*jslint unparam: true*/
-                    registers.push($1);
-                    return '';
-                });
+                    var registers = [],
+                        name = decodeURIComponent(pair[0]),
+                        value = decodeURIComponent(pair[1] || ''),
+                        tmp = query,
+                        register,
+                        next,
+                        j,
+                        l;
 
-                registers.unshift(name);
+                    name = name.replace(/\[([^\]]*)\]/g, function (all, $1) {
+                        /*jslint unparam: true*/
+                        registers.push($1);
+                        return '';
+                    });
 
-                for (j = 0, l = registers.length - 1; j < l; j++) {
-                    register = registers[j];
+                    registers.unshift(name);
 
-                    next = registers[j + 1];
+                    for (j = 0, l = registers.length - 1; j < l; j++) {
+                        register = registers[j];
 
-                    if (!tmp[register]) {
-                        tmp[register] = next === '' || (/^[0-9]+$/).test(next) ? [] : {};
+                        next = registers[j + 1];
+
+                        if (!tmp[register]) {
+                            tmp[register] = next === '' || (/^[0-9]+$/).test(next) ? [] : {};
+                        }
+
+                        tmp = tmp[register];
                     }
 
-                    tmp = tmp[register];
-                }
+                    register = registers[l];
 
-                register = registers[l];
+                    if (register === '') {
+                        tmp.push(value);
+                    } else {
+                        tmp[register] = value;
+                    }
+                });
 
-                if (register === '') {
-                    tmp.push(value);
-                } else {
-                    tmp[register] = value;
-                }
-            });
+            return query;
+        };
 
-        return query;
-    }
+    module.exports = Cla55.extend({
 
-    /**
-     * Initialize a new "request" `Request`
-     * with the given `path` and optional initial `state`.
-     *
-     * @param {String} path
-     * @param {String} base
-     * @api public
-     */
+        /**
+         * Initialize a new "request" `Request`
+         * with the given `path` and optional initial `state`.
+         *
+         * @param {String} path
+         * @param {String} base
+         * @api public
+         */
 
-    function Request() {
-        this.constructor.apply(this, arguments);
-    }
+        constructor: function constructor(method, path, options) {
+            options = options || {};
 
-    Request.prototype.constructor = function Request(method, path, options) {
-        options = options || {};
+            var base = options.base || '',
+                parts,
+                i;
 
-        var base = options.base || '',
-            parts,
-            i;
+            if (path[0] === '/' && path.indexOf(base) !== 0) {
+                path = base + path;
+            }
 
-        if (path[0] === '/' && path.indexOf(base) !== 0) {
-            path = base + path;
+            i = path.indexOf('?');
+
+            this.method = method;
+            this.path = path.replace(base, '') || '/';
+            this.canonicalPath = path;
+
+            //this.title = document.title;
+            //this.state = state || {};
+            //this.state.path = path;
+            this.querystring = i !== -1 ? path.slice(i + 1) : '';
+            this.pathname = i !== -1 ? path.slice(0, i) : path;
+            this.params = [];
+
+            // fragment
+            this.hash = '';
+            if (this.path.indexOf('#') !== -1) {
+                parts = this.path.split('#');
+                this.path = parts[0];
+                this.hash = parts[1] || '';
+                this.querystring = this.querystring.split('#')[0];
+            }
+            this.query = parse(this.querystring);
+        },
+
+        param: function param(key) {
+            return this.params[key];
+        },
+
+        end: function end(callback) {
+            return this;
         }
+    });
 
-        i = path.indexOf('?');
-
-        this.method = method;
-        this.path = path.replace(base, '') || '/';
-        this.canonicalPath = path;
-
-        //this.title = document.title;
-        //this.state = state || {};
-        //this.state.path = path;
-        this.querystring = i !== -1 ? path.slice(i + 1) : '';
-        this.pathname = i !== -1 ? path.slice(0, i) : path;
-        this.params = [];
-
-        // fragment
-        this.hash = '';
-        if (this.path.indexOf('#') !== -1) {
-            parts = this.path.split('#');
-            this.path = parts[0];
-            this.hash = parts[1] || '';
-            this.querystring = this.querystring.split('#')[0];
-        }
-        this.query = parse(this.querystring);
-    };
-
-    Request.prototype.param = function param(key) {
-        return this.params[key];
-    };
-
-    Request.prototype.end = function end(callback) {
-        return this;
-    };
-
-    module.exports = Request;
 
 }));

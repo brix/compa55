@@ -21,7 +21,7 @@
     "http",
     "middleware"
   ],
-  "main": "index.js",
+  "main": "compa55.js",
   "dependencies": {
     "cla55": "git+https://github.com/brix/cla55.git#0.1.1"
   },
