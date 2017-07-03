@@ -20,7 +20,7 @@
     var Cla55 = require('cla55'),
 
         parse = function parse(querystring) {
-            var query = {};
+            var query = {length: 0};
 
             querystring
                 .replace(/^(\?)/, '')
@@ -60,7 +60,7 @@
                     register = registers[l];
 
                     if (register === '') {
-                        tmp.push(value);
+                        Array.prototype.push.call(tmp, value);
                     } else {
                         tmp[register] = value;
                     }
@@ -75,8 +75,9 @@
          * Initialize a new "request" `Request`
          * with the given `path` and optional initial `state`.
          *
-         * @param {String} path
-         * @param {String} base
+         * @param   {String}        method
+         * @param   {String}        path
+         * @param   {Object}        options
          * @api public
          */
 

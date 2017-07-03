@@ -6,7 +6,7 @@
 
     if (typeof define === 'function' && define.amd) {
         // AMD: Register as an anonymous module
-        return define(['require', 'exports', 'module', 'cla55', './route'], factory);
+        return define(['require', 'exports', 'module', 'cla55'], factory);
     }
 
     if (typeof exports === 'object') {
@@ -18,14 +18,32 @@
 
     'use strict';
 
-    var Cla55 = require('cla55'),
-        Route = require('./route');
+    var Cla55 = require('cla55');
 
     module.exports = Cla55.extend({
-        constructor: function constructor(options) {
+
+        /**
+         * Initialize `Router` with the given HTTP `path`,
+         * and an array of `callbacks` and `options`.
+         *
+         * Options:
+         *
+         *     - `base`             base path for sub routing as middleware
+         *     - `methods`          array of supported methods like 'GET', 'POST' ...
+         *     - `caseSensitive`    enable case-sensitive routes
+         *     - `strict`           enable strict matching for trailing slashes
+         *
+         * @param   {Function}      route
+         * @param   {Object}        options
+         * @api     public
+         */
+
+        constructor: function constructor(Route, options) {
             options = options || {};
 
             var that = this;
+
+            this._Route = Route;
 
             this.map = {};
 
@@ -53,8 +71,6 @@
                 that._dispatch(req, res, next);
             };
         },
-
-        Route: Route,
 
         _dispatch: function _dispatch(req, res, next) {
             var
@@ -131,7 +147,7 @@
             this.map[method] = this.map[method] || [];
 
             // Add route
-            this.map[method].push(new this.Route(method, this.base + path, callbacks, {
+            this.map[method].push(new this._Route(method, this.base + path, callbacks, {
                 caseSensitive: this.caseSensitive,
                 stict: this.strict
             }));
