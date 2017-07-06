@@ -1,129 +1,72 @@
-/*global require, exports, module, define*/
-(function (root, factory) {
+'use strict';
 
-    'use strict';
+const Cla55 = require('cla55');
 
-    if (typeof define === 'function' && define.amd) {
-        // AMD: Register as an anonymous module
-        return define(['require', 'exports', 'module', 'cla55'], factory);
-    }
+const qs = require('qs');
+const url = require('url');
 
-    if (typeof exports === 'object') {
-        // CommonJS
-        return factory(require, exports, module);
-    }
-
-}(this, function (require, exports, module) {
-
-    'use strict';
-
-    var Cla55 = require('cla55'),
-
-        parse = function parse(querystring) {
-            var query = {length: 0};
-
-            querystring
-                .replace(/^(\?)/, '')
-                .split('&')
-                .forEach(function (pair) {
-                    pair = pair.split('=');
-
-                    var registers = [],
-                        name = decodeURIComponent(pair[0]),
-                        value = decodeURIComponent(pair[1] || ''),
-                        tmp = query,
-                        register,
-                        next,
-                        j,
-                        l;
-
-                    name = name.replace(/\[([^\]]*)\]/g, function (all, $1) {
-                        /*jslint unparam: true*/
-                        registers.push($1);
-                        return '';
-                    });
-
-                    registers.unshift(name);
-
-                    for (j = 0, l = registers.length - 1; j < l; j++) {
-                        register = registers[j];
-
-                        next = registers[j + 1];
-
-                        if (!tmp[register]) {
-                            tmp[register] = next === '' || (/^[0-9]+$/).test(next) ? [] : {};
-                        }
-
-                        tmp = tmp[register];
-                    }
-
-                    register = registers[l];
-
-                    if (register === '') {
-                        Array.prototype.push.call(tmp, value);
-                    } else {
-                        tmp[register] = value;
-                    }
-                });
-
-            return query;
-        };
-
-    module.exports = Cla55.extend({
-
-        /**
-         * Initialize a new "request" `Request`
-         * with the given `path` and optional initial `state`.
-         *
-         * @param   {String}        method
-         * @param   {String}        path
-         * @param   {Object}        options
-         * @api public
-         */
-
-        constructor: function constructor(method, path, options) {
-            options = options || {};
-
-            var base = options.base || '',
-                parts,
-                i;
-
-            if (path[0] === '/' && path.indexOf(base) !== 0) {
-                path = base + path;
-            }
-
-            i = path.indexOf('?');
-
-            this.method = method;
-            this.path = path.replace(base, '') || '/';
-            this.canonicalPath = path;
-
-            //this.title = document.title;
-            //this.state = state || {};
-            //this.state.path = path;
-            this.querystring = i !== -1 ? path.slice(i + 1) : '';
-            this.pathname = i !== -1 ? path.slice(0, i) : path;
-            this.params = [];
-
-            // fragment
-            this.hash = '';
-            if (this.path.indexOf('#') !== -1) {
-                parts = this.path.split('#');
-                this.path = parts[0];
-                this.hash = parts[1] || '';
-                this.querystring = this.querystring.split('#')[0];
-            }
-            this.query = parse(this.querystring);
-        },
-
-        param: function param(key) {
-            return this.params[key];
-        },
-
-        end: function end(callback) {
-            return this;
+const keys = ['hash', 'host', 'hostname', 'href', 'origin', 'pathname', 'port', 'protocol', 'search'];
+const nullToEmptyString = function (obj) {
+    keys.forEach(key => {
+        if (obj[key] === null) {
+            obj[key] = '';
         }
     });
 
+    return obj;
+};
 
-}));
+module.exports = Cla55.extend({
+
+    /**
+     * Initialize a new "request" `Request`
+     * with the given `url` and optional initial `state`.
+     *
+     * @param   {String}        method
+     * @param   {String}        path
+     * @param   {Object}        options
+     * @api public
+     */
+
+    constructor: function constructor(method, path, options) {
+        options = options || {};
+
+        this.method = method.toUpperCase();
+
+        // Parsed url
+        this._parsedUrl = nullToEmptyString(_.pick(url.parse(path), keys));
+        this._parsedUrl.query = qs.parse(this._parsedUrl.search);
+
+        // Raw url path
+        this.originalUrl = this._parsedUrl.pathname + this._parsedUrl.search + this._parsedUrl.hash;
+        this.url = this.originalUrl;
+
+        // Domain
+        this.domain = this._parsedUrl.domain;
+
+        // Query
+        this.query = this._parsedUrl.query;
+
+        // Params
+        this.params = {};
+
+        // Headers
+        this.headers = options.headers || {};
+
+        // Body
+        this.body = options.body || {};
+
+        // Dummy next handler
+        this.next = function () {
+            return;
+        };
+    },
+
+    param: function param(key) {
+        return this.params[key];
+    },
+
+    end: function end(callback) {
+        return this;
+    }
+});

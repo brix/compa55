@@ -23,7 +23,7 @@
   ],
   "main": "compa55.js",
   "dependencies": {
-    "cla55": "git+https://github.com/brix/cla55.git#0.1.1"
+    "cla55": "^0.1.4"
   },
   "devDependencies": {
     "grunt": "^0.4.5",
