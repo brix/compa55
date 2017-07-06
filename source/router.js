@@ -14,10 +14,10 @@ module.exports = Cla55.extend({
      *
      * Options:
      *
-     *     - `base`             base path for sub routing as middleware
      *     - `methods`          array of supported methods like 'GET', 'POST' ...
-     *     - `caseSensitive`    enable case-sensitive routes
+     *     - `sensitive`        enable case-sensitive routes
      *     - `strict`           enable strict matching for trailing slashes
+     *     - `end`              match the beginning only
      *
      * @param   {Function}      route
      * @param   {Object}        options
@@ -29,9 +29,8 @@ module.exports = Cla55.extend({
 
         this.map = {};
 
-        this.base = options.base || '';
-        this.caseSensitive = options.caseSensitive;
-        this.strict = options.strict;
+        this.sensitive = options.sensitive || false;
+        this.strict = options.strict || false;
 
         // Set supported methods by this router
         this.methods = (options.methods || ['get'])
@@ -62,9 +61,9 @@ module.exports = Cla55.extend({
         let j = 0;
 
         // Callback series per route
-        function allCallbacks(req, res, next) {
-            function nextCallback() {
-                var fn = callbacks[j++];
+        const allCallbacks = (req, res, next) => {
+            const nextCallback = () => {
+                const callback = callbacks[j++];
 
                 // Response is already finished, stop the series
                 if (res.finished) {
@@ -72,21 +71,15 @@ module.exports = Cla55.extend({
                 }
 
                 // Leave the callback series and go for the parent series
-                if (!fn) {
+                if (!callback) {
                     return next();
                 }
 
                 // Add next handler to request object
                 req.next = nextCallback;
 
-                // Execute callback or run the middleware
-                if (fn.middleware) {
-                    req.next = nextCallback;
-
-                    fn.middleware(req, res, nextCallback);
-                } else {
-                    fn(req, res, nextCallback);
-                }
+                // Execute callback
+                callback(req, res, nextCallback);
             }
 
             // Handle next callback in series
@@ -94,8 +87,8 @@ module.exports = Cla55.extend({
         }
 
         // Route series by method
-        function allRoutes(req, res, next) {
-            function nextRoute() {
+        const allRoutes = (req, res, next) => {
+            const nextRoute = () => {
                 const route = routes[i++];
 
                 // Leave the route series and go for the parent series
@@ -104,7 +97,7 @@ module.exports = Cla55.extend({
                 }
 
                 // Skip and handle next route in series
-                if (!route.match(req._parsedUrl.pathname)) {
+                if (!route.match(req.url)) {
                     return nextRoute();
                 }
 
@@ -131,11 +124,12 @@ module.exports = Cla55.extend({
     },
 
     route: function route(method, path, callbacks) {
+        // Ensure route map by method
         this.map[method] = this.map[method] || [];
 
-        // Add route
-        this.map[method].push(new this.Route(method, this.base + path, callbacks, {
-            caseSensitive: this.caseSensitive,
+        // Create and route
+        this.map[method].push(new this.Route(method, path, callbacks, {
+            sensitive: this.sensitive,
             stict: this.strict
         }));
 
@@ -143,16 +137,46 @@ module.exports = Cla55.extend({
     },
 
     use: function use(path, middleware) {
-        const args = [].slice.call(arguments);
+        /*jslint unparam: true*/
 
         // For all paths
-        if (typeof path !== 'string') {
-            args.unshift('*');
+        if (typeof path === 'function' || Object.prototype.toString.call(path) === '[object Object]') {
             middleware = path;
+            path = '';
+        }
+
+        if (typeof middleware.middleware === 'function') {
+            middleware = middleware.middleware;
         }
 
         (middleware.methods || this.methods).forEach(method => {
-            this.route.apply(this, [method].concat(args));
+            // Ensure route map by method
+            this.map[method] = this.map[method] || [];
+
+            // Create handle
+            const handle = function (req, res, next) {
+                // Remove left middleware path of the url
+                req.url = req.url.replace(route.regexp, '');
+
+                // Call the middleware with next hook
+                middleware(req, res, () => {
+                    // Write back original url
+                    req.url = req.originalUrl;
+
+                    // Call original next
+                    next();
+                });
+            };
+
+            // Create route
+            const route = new this.Route(method, path, [handle], {
+                sensitive: this.sensitive,
+                stict: false,
+                end: false
+            });
+
+            // Add route
+            this.map[method].push(route);
         });
 
         return this;
@@ -160,10 +184,10 @@ module.exports = Cla55.extend({
 
     all: function all(path, callback) {
         /*jslint unparam: true*/
-        const args = [].slice.call(arguments);
+        const callbacks = [].slice.call(arguments, 1);
 
         this.methods.forEach(method => {
-            this.route.apply(this, [method].concat(args));
+            this.route.call(this, method, path, callbacks);
         });
 
         return this;
