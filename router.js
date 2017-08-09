@@ -155,13 +155,16 @@ module.exports = Cla55.extend({
 
             // Create handle
             const handle = function (req, res, next) {
+                // Preserve the current url to write back after handle middleware
+                const preserveUrl = req.url;
+
                 // Remove left middleware path of the url
                 req.url = req.url.replace(route.regexp, '');
 
                 // Call the middleware with next hook
                 middleware(req, res, () => {
                     // Write back original url
-                    req.url = req.originalUrl;
+                    req.url = preserveUrl;
 
                     // Call original next
                     next();
