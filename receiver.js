@@ -1,38 +1,17 @@
-/*jslint node: true, plusplus: true, nomen: true*/
+'use strict';
 
-module.exports = (function () {
+const Router = require('./router');
 
-    'use strict';
+const Request = require('./Request');
+const Response = require('./Response');
 
-    var Routify;
+module.exports = Router.extend({
 
-    Routify = function Routify() {
-        this.constructor.apply(this, arguments);
-    };
+    Request: Request,
 
-    Routify.prototype.constructor = function Routify(server, Request, Response) {
-        // Add provided arguments to instance
-        this._Request = Request;
-        this._Response = Response;
-        this._server = server;
+    Response: Response,
 
-        // Set supported methods by this server
-        this._server.methods
-            .forEach(function (method) {
-                // Save method in list supported methods as upper case
-                method = method.toLowerCase();
-
-                // Generate a shortcut for each supported method
-                this[method] = function (path) {
-                    /*jslint unparam: true*/
-                    return this.request.apply(this, [method].concat([].slice.call(arguments)));
-                };
-
-                return method;
-            }, this);
-    };
-
-    Routify.prototype.request = function request(method, path, data, callback) {
+    _open_request: function request(method, path, data, callback) {
         var that = this,
             callbacks = [],
             req,
@@ -52,7 +31,7 @@ module.exports = (function () {
                 responseEnd,
                 response;
 
-            response = new that._Response();
+            response = new that.Response();
 
             responseEnd = response.end;
             response.end = function end(data) {
@@ -63,7 +42,7 @@ module.exports = (function () {
                 if (!responseEndHookedOnce) {
                     responseEndHookedOnce = true;
 
-                    close(data);
+                    close(response);
                 }
 
                 // Call the original request end method
@@ -79,8 +58,8 @@ module.exports = (function () {
                 requestEnd,
                 request;
 
-            request = new that._Request(method, path, {
-                base: that._server.base
+            request = new that.Request(method, path, {
+                base: that.base
             });
 
             requestEnd = request.end;
@@ -94,9 +73,9 @@ module.exports = (function () {
 
                     // Ensure req returns before run async callback chain
                     setTimeout(function () {
-                        // Dispatch the request on the server
-                        that._server.middleware(req, res, function next(err, res) {
-                            close(new Error('Unhandled request.'))
+                        // Dispatch the request on the router
+                        that.middleware(req, res, function next(err, res) {
+                            close(new Error('Unhandled request.'));
                         });
                     });
                 }
@@ -128,8 +107,9 @@ module.exports = (function () {
         }
 
         return req;
-    };
+    },
 
-    return Routify;
-
-}());
+    listen: function (client) {
+        client.connect(this._open_request.bind(this));
+    }
+});

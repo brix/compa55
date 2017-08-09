@@ -1,0 +1,25 @@
+{
+  "name": "compa55",
+  "version": "0.0.1",
+  "description": "Routable data interface library",
+  "license": "MIT",
+  "author": {
+    "name": "Evan Vosberg",
+    "email": "evanvosberg@urban.to"
+  },
+  "homepage": "https://github.com/brix/compa55",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/brix/compa55.git"
+  },
+  "keywords": [
+    "express",
+    "route",
+    "http",
+    "middleware"
+  ],
+  "main": "compa55.js",
+  "dependencies": {
+    "cla55": "^0.1.4"
+  }
+}

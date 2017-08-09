@@ -1,0 +1,21 @@
+{
+  "name": "compa55",
+  "version": "0.0.1",
+  "description": "Routable data interface library",
+  "license": "MIT",
+  "homepage": "https://github.com/brix/compa55",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/brix/compa55.git"
+  },
+  "keywords": [
+    "express",
+    "route",
+    "http",
+    "middleware"
+  ],
+  "main": "compa55.js",
+  "dependencies": {
+    "cla55": "^0.1.4"
+  }
+}

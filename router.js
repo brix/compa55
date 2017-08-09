@@ -1,59 +1,69 @@
-/*jslint node: true, plusplus: true*/
+'use strict';
 
-module.exports = (function () {
+const Cla55 = require('cla55');
 
-    'use strict';
+const Route = require('./route');
 
-    var Route = require('./route'),
-        Router;
+module.exports = Cla55.extend({
 
-    Router = function Router() {
-        return this.constructor.apply(this, arguments);
-    };
+    Route: Route,
 
-    Router.prototype.constructor = function Router(options) {
+    /**
+     * Initialize `Router` with the given HTTP `path`,
+     * and an array of `callbacks` and `options`.
+     *
+     * Options:
+     *
+     *     - `methods`          array of supported methods like 'GET', 'POST' ...
+     *     - `sensitive`        enable case-sensitive routes
+     *     - `strict`           enable strict matching for trailing slashes
+     *     - `end`              match the beginning only
+     *
+     * @param   {Function}      route
+     * @param   {Object}        options
+     * @api     public
+     */
+
+    constructor: function constructor(options) {
         options = options || {};
-
-        var that = this;
 
         this.map = {};
 
-        this.base = options.base || '';
-        this.caseSensitive = options.caseSensitive;
-        this.strict = options.strict;
+        this.sensitive = options.sensitive || false;
+        this.strict = options.strict || false;
 
         // Set supported methods by this router
         this.methods = (options.methods || ['get'])
-            .map(function (method) {
+            .map(method => {
                 // Save method in list supported methods as upper case
                 method = method.toLowerCase();
 
                 // Generate a shortcut for each supported method
                 this[method] = function (path, callback) {
                     /*jslint unparam: true*/
-                    return this.route.apply(this, [method].concat([].slice.call(arguments)));
+                    return this.route.apply(this, [method, path].concat([[].slice.call(arguments, 1)]));
                 };
 
                 return method;
-            }, this);
+            });
 
         // Make it valid middleware
-        this.middleware = function router(req, res, next) {
-            that._dispatch(req, res, next);
+        this.middleware = (req, res, next) => {
+            this._dispatch(req, res, next);
         };
-    };
+    },
 
-    Router.prototype._dispatch = function (req, res, next) {
-        var
-            callbacks = [],
-            routes = this.map[req.method] || [],
-            i = 0,
-            j = 0;
+    _dispatch: function _dispatch(req, res, next) {
+        const routes = this.map[req.method.toLowerCase()] || [];
+
+        let callbacks = [];
+        let i = 0;
+        let j = 0;
 
         // Callback series per route
-        function allCallbacks(req, res, next) {
-            function nextCallback() {
-                var fn = callbacks[j++];
+        const allCallbacks = (req, res, next) => {
+            const nextCallback = () => {
+                const callback = callbacks[j++];
 
                 // Response is already finished, stop the series
                 if (res.finished) {
@@ -61,16 +71,15 @@ module.exports = (function () {
                 }
 
                 // Leave the callback series and go for the parent series
-                if (!fn) {
-                    return next(req, res, next);
+                if (!callback) {
+                    return next();
                 }
 
-                // Execute callback or run the middleware
-                if (fn.middleware) {
-                    fn.middleware(req, res, nextCallback);
-                } else {
-                    fn(req, res, nextCallback)
-                }
+                // Add next handler to request object
+                req.next = nextCallback;
+
+                // Execute callback
+                callback(req, res, nextCallback);
             }
 
             // Handle next callback in series
@@ -78,17 +87,17 @@ module.exports = (function () {
         }
 
         // Route series by method
-        function allRoutes(req, res, next) {
-            function nextRoute() {
-                var route = routes[i++];
+        const allRoutes = (req, res, next) => {
+            const nextRoute = () => {
+                const route = routes[i++];
 
                 // Leave the route series and go for the parent series
                 if (!route) {
-                    return next(req, res, next);
+                    return next();
                 }
 
                 // Skip and handle next route in series
-                if (!route.match(req.pathname)) {
+                if (!route.match(req.url)) {
                     return nextRoute();
                 }
 
@@ -112,52 +121,75 @@ module.exports = (function () {
 
         // Run route series
         allRoutes(req, res, next);
-    };
+    },
 
-    Router.prototype.route = function route(method, path, callbacks) {
-        var options = {
-                caseSensitive: this.caseSensitive,
-                stict: this.strict
-            },
-            route = new Route(method, this.base + path, callbacks, options);
+    route: function route(method, path, callbacks) {
+        // Ensure route map by method
+        this.map[method] = this.map[method] || [];
 
-        // Add route
-        /*jslint ass: true*/
-        (this.map[method] = this.map[method] || []).push(route);
-        /*jslint ass: false*/
+        // Create and route
+        this.map[method].push(new this.Route(method, path, callbacks, {
+            sensitive: this.sensitive,
+            stict: this.strict
+        }));
 
         return this;
-    };
+    },
 
-    Router.prototype.use = function (path, middleware) {
-        var that = this,
-            args = [].slice.call(arguments);
+    use: function use(path, middleware) {
+        /*jslint unparam: true*/
 
         // For all paths
-        if (typeof path !== 'string') {
-            args.unshift('*');
+        if (typeof path === 'function' || Object.prototype.toString.call(path) === '[object Object]') {
             middleware = path;
+            path = '';
         }
 
-        (middleware.methods || this.methods).forEach(function (method) {
-            that.route.apply(that, [method].concat(args));
+        if (typeof middleware.middleware === 'function') {
+            middleware = middleware.middleware;
+        }
+
+        (middleware.methods || this.methods).forEach(method => {
+            // Ensure route map by method
+            this.map[method] = this.map[method] || [];
+
+            // Create handle
+            const handle = function (req, res, next) {
+                // Remove left middleware path of the url
+                req.url = req.url.replace(route.regexp, '');
+
+                // Call the middleware with next hook
+                middleware(req, res, () => {
+                    // Write back original url
+                    req.url = req.originalUrl;
+
+                    // Call original next
+                    next();
+                });
+            };
+
+            // Create route
+            const route = new this.Route(method, path, [handle], {
+                sensitive: this.sensitive,
+                stict: false,
+                end: false
+            });
+
+            // Add route
+            this.map[method].push(route);
         });
 
         return this;
-    };
+    },
 
-    Router.prototype.all = function (path, callback) {
+    all: function all(path, callback) {
         /*jslint unparam: true*/
-        var that = this,
-            args = [].slice.call(arguments);
+        const callbacks = [].slice.call(arguments, 1);
 
-        this.methods.forEach(function (method) {
-            that.route.apply(that, [method].concat(args));
+        this.methods.forEach(method => {
+            this.route.call(this, method, path, callbacks);
         });
 
         return this;
-    };
-
-    return Router;
-
-}());
+    }
+});
