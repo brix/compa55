@@ -2,8 +2,8 @@
 
 const Router = require('./router');
 
-const Request = require('./Request');
-const Response = require('./Response');
+const Request = require('./request');
+const Response = require('./response');
 
 module.exports = Router.extend({
 
