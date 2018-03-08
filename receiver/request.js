@@ -1,9 +1,9 @@
 'use strict';
 
-const Cla55 = require('cla55');
-
+const _ = require('lodash');
 const qs = require('qs');
 const url = require('url');
+const Cla55 = require('cla55');
 
 const keys = ['hash', 'host', 'hostname', 'href', 'origin', 'pathname', 'port', 'protocol', 'search'];
 const nullToEmptyString = function (obj) {
@@ -28,18 +28,16 @@ module.exports = Cla55.extend({
      * @api public
      */
 
-    constructor: function constructor(method, path, options) {
-        options = options || {};
-
+    constructor: function constructor(method, headers, path, body) {
         this.method = method.toUpperCase();
 
         // Parsed url
         this._parsedUrl = nullToEmptyString(_.pick(url.parse(path), keys));
-        this._parsedUrl.query = qs.parse(this._parsedUrl.search);
+        this._parsedUrl.query = qs.parse(this._parsedUrl.search.replace(/^\?/, ''));
 
         // Raw url path
         this.originalUrl = this._parsedUrl.pathname + this._parsedUrl.search + this._parsedUrl.hash;
-        this.url = this.originalUrl;
+        this.url = this._parsedUrl.pathname;
 
         // Domain
         this.domain = this._parsedUrl.domain;
@@ -51,10 +49,10 @@ module.exports = Cla55.extend({
         this.params = {};
 
         // Headers
-        this.headers = options.headers || {};
+        this.headers = headers || {};
 
         // Body
-        this.body = options.body || {};
+        this.body = body || {};
 
         // Dummy next handler
         this.next = function () {
@@ -66,7 +64,7 @@ module.exports = Cla55.extend({
         return this.params[key];
     },
 
-    end: function end(callback) {
-        return this;
+    header: function (field) {
+        return this.headers[field.toLowerCase()];
     }
 });

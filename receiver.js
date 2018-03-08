@@ -2,8 +2,8 @@
 
 const Router = require('./router');
 
-const Request = require('./request');
-const Response = require('./response');
+const Request = require('./receiver/request');
+const Response = require('./receiver/response');
 
 module.exports = Router.extend({
 
@@ -11,105 +11,28 @@ module.exports = Router.extend({
 
     Response: Response,
 
-    _open_request: function request(method, path, data, callback) {
-        var that = this,
-            callbacks = [],
-            req,
-            res,
-            close;
+    openRequest: function request(request, callback) {
 
-        // Close the request and execute callbacks
-        close = function (err) {
-            while (callbacks.length) {
-                callbacks.shift()(err || null, res);
-            }
-        };
+        request = JSON.parse(request);
 
-        // The response object
-        res = (function createResponse() {
-            var responseEndHookedOnce = false,
-                responseEnd,
-                response;
+        // The response and request object object
+        const req = new this.Request(request.method, request.headers, request.url, request.body);
+        const res = new this.Response();
 
-            response = new that.Response();
-
-            responseEnd = response.end;
-            response.end = function end(data) {
-                // Call the original response end method
-                var returnValue = responseEnd.apply(this, arguments);
-
-                // Close the request
-                if (!responseEndHookedOnce) {
-                    responseEndHookedOnce = true;
-
-                    close(response);
-                }
-
-                // Call the original request end method
-                return returnValue;
-            };
-
-            return response;
-        }());
-
-        // The request object
-        req = (function createRequest() {
-            var requestEndHookedOnce = false,
-                requestEnd,
-                request;
-
-            request = new that.Request(method, path, {
-                base: that.base
-            });
-
-            requestEnd = request.end;
-            request.end = function end(cb) {
-                // Call the original request end method
-                var returnValue = requestEnd.apply(this, arguments);
-
-                // Start the middleware services
-                if (!requestEndHookedOnce) {
-                    requestEndHookedOnce = true;
-
-                    // Ensure req returns before run async callback chain
-                    setTimeout(function () {
-                        // Dispatch the request on the router
-                        that.middleware(req, res, function next(err, res) {
-                            close(new Error('Unhandled request.'));
-                        });
-                    });
-                }
-
-                // Add callback to the stack
-                callbacks.push(cb);
-
-                return returnValue;
-            };
-
-            return request;
-        }());
-
-        // Circular connection of request and response
+        // Circular connection
         req.res = res;
-        res.req = req;
+        res.req = req
 
-        if (typeof data === 'function') {
-            callback = data;
-            data = null;
-        }
+        res.__end__ = callback;
 
-        if (data) {
-            req.send(data);
-        }
-
-        if (typeof callback === 'function') {
-            req.end(callback);
-        }
-
-        return req;
+        this._dispatch(req, res, function next(err, res) {
+            throw new Error('Unhandled request.');
+        });
     },
 
     listen: function (client) {
-        client.connect(this._open_request.bind(this));
+        const openRequestHandle = this.openRequest.bind(this);
+
+        client.connect(openRequestHandle);
     }
 });

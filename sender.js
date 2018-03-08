@@ -3,7 +3,13 @@
 
 const Cla55 = require('cla55');
 
+const Request = require('./sender/request');
+const Response = require('./sender/response');
+
 module.exports = Cla55.extend({
+
+    Request: Request,
+    Response: Response,
 
     /**
      * Initialize `Client`
@@ -21,7 +27,7 @@ module.exports = Cla55.extend({
 
         // Set supported methods by this router
         (options.methods || ['get'])
-            .forEach(function (method) {
+            .forEach(method => {
                 // Save method in list supported methods as upper case
                 method = method.toLowerCase();
 
@@ -32,14 +38,43 @@ module.exports = Cla55.extend({
                 };
 
                 return method;
-            }, this);
+            });
     },
 
-    request: function (method, path, data, callback) {
-        return this._openRequest(method, path, data, callback);
+    request: function (method, url) {
+        const req = new this.Request(method, url);
+
+        //
+        req.__end__ = (request, callback) => {
+
+
+            this.__request__(request, (response) => {
+
+                // Parse the response
+                try {
+                    response = JSON.parse(response);
+                } catch (error) {
+                    response = {
+                        status: 500,
+                        headers: {},
+                        body: ''
+                    };
+                }
+
+                const res = new this.Response(response.status, response.headers, response.body);
+
+                if (/^2\d\d$/.test(res.status)) {
+                    callback(null, res);
+                } else {
+                    callback(res, res);
+                }
+            });
+        };
+
+        return req;
     },
 
     connect: function (openRequest) {
-        this._openRequest = openRequest;
+        this.__request__ = openRequest;
     }
 });

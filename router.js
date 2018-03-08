@@ -130,7 +130,7 @@ module.exports = Cla55.extend({
         // Create and route
         this.map[method].push(new this.Route(method, path, callbacks, {
             sensitive: this.sensitive,
-            stict: this.strict
+            strict: this.strict
         }));
 
         return this;
@@ -174,7 +174,7 @@ module.exports = Cla55.extend({
             // Create route
             const route = new this.Route(method, path, [handle], {
                 sensitive: this.sensitive,
-                stict: false,
+                strict: false,
                 end: false
             });
 
