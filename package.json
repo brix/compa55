@@ -23,7 +23,8 @@
   ],
   "main": "compa55.js",
   "dependencies": {
-    "cla55": "^0.1.4"
+    "cla55": "^0.1.4",
+    "path-to-regexp": "^6.1.0"
   },
   "devDependencies": {
     "grunt": "^0.4.5",
