@@ -30,7 +30,7 @@ module.exports = Cla55.extend({
         this.callbacks = callbacks;
         /*jslint ass: true*/
 
-        this.regexp = pathToRegexp(path, this.keys = [], {
+        this.regexp = pathToRegexp.pathToRegexp(path, this.keys = [], {
             sensitive: options.sensitive,
             strict: options.strict === false ? false : true,
             end: options.end === false ? false : true
