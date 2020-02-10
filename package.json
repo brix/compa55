@@ -1,6 +1,6 @@
 {
   "name": "compa55",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Routable data interface library",
   "license": "MIT",
   "author": {
@@ -20,6 +20,7 @@
   ],
   "main": "compa55.js",
   "dependencies": {
-    "cla55": "^0.1.4"
+    "cla55": "^0.1.4",
+    "path-to-regexp": "^6.1.0"
   }
 }
